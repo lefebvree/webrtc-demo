@@ -1,0 +1,22 @@
+<html>
+	<head>
+		<title>WebRTC Demo</title>
+		<script src="/socket.io/socket.io.js"></script>
+	</head>
+	<body>
+		<video id="local" autoplay muted></video>
+		<video id="remote" autoplay></video>
+
+		<script>
+			const localVideo = document.getElementById('local')
+			const remoteVideo = document.getElementById('remote')
+
+			const socket = io('//')
+			socket.on('connect', function (data) {
+				console.log(data);
+			})
+
+		</script>
+	</body>
+</html>
+

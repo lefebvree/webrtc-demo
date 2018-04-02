@@ -1,0 +1,11 @@
+{
+  "name": "webrtc-demo",
+  "version": "1.0.0",
+  "description": "A simple Web RTC video chat using socket.io",
+  "main": "server.js",
+  "repository": "https://github.com/lefebvree/webrtc-demo",
+  "license": "MIT",
+  "dependencies": {
+    "socket.io": "^2.1.0"
+  }
+}
