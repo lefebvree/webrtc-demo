@@ -16,11 +16,11 @@ let app = https.createServer(options, function(req, res) {
 	res.end(staticHTML)
 })
 
-// Initialisation Socket.io & server
+// Initialisation Socket.io & https server
 const io = sio.listen(app)
 app.listen(3000)
 
-// Emets les offer à tous les autres clients
+// Relais les messages aux autres clients
 io.sockets.on('connection', function (socket) {
 	socket.on('msg', function (data) {
 		socket.broadcast.emit('msg', data)

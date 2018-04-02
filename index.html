@@ -3,11 +3,11 @@
 		<title>WebRTC Demo</title>
 		<script src="/socket.io/socket.io.js"></script>
 	</head>
-	<body onload="showMyFace()">
-		<video id="local" autoplay muted></video>
+	<body onload="startLocalVideo()">
 		<video id="remote" autoplay></video>
+		<video id="local" autoplay muted></video>
 
-		<button onclick="showFriendsFace()" type="button">Call</button>
+		<button onclick="startRemoteVideo()" type="button">CALL</button>
 
 		<script>
 			// Script based on websitebeaver.com
@@ -16,9 +16,10 @@
 			const localVideo = document.getElementById('local')
 			const remoteVideo = document.getElementById('remote')
 
-			const socket = io('//')
-
 			const servers = {'iceServers': [{'urls': 'stun:stun.services.mozilla.com'}, {'urls': 'stun:stun.l.google.com:19302'}]}
+
+			const socket = io('//')
+			socket.on('msg', data => readMessage(data))
 
 			let pc = new RTCPeerConnection(servers)
 
@@ -29,34 +30,68 @@
 				socket.emit('msg', data)
 			}
 
-			function readMessage(msg) {
-				if (msg.ice != undefined) {
-					pc.addIceCandidate(new RTCIceCandidate(msg.ice))
-				} else if (msg.sdp.type == "offer") {
-					pc.setRemoteDescription(new RTCSessionDescription(msg.sdp))
+			function readMessage(data) {
+				if (data.ice != undefined) {
+					pc.addIceCandidate(new RTCIceCandidate(data.ice))
+				} else if (data.sdp.type == "offer") {
+					pc.setRemoteDescription(new RTCSessionDescription(data.sdp))
 					.then(() => pc.createAnswer())
 					.then(answer => pc.setLocalDescription(answer))
 					.then(() => sendMessage({'sdp': pc.localDescription}))
-				} else if (msg.sdp.type == "answer") {
-					pc.setRemoteDescription(new RTCSessionDescription(msg.sdp))
+				} else if (data.sdp.type == "answer") {
+					pc.setRemoteDescription(new RTCSessionDescription(data.sdp))
 				}
 			}
 
-			socket.on('msg', data => readMessage(data))
-
-			function showMyFace() {
+			function startLocalVideo() {
 				navigator.mediaDevices.getUserMedia({audio: false, video: true})
 				.then(stream => localVideo.srcObject = stream)
 				.then(stream => pc.addStream(stream))
 			}
 
-			function showFriendsFace() {
+			function startRemoteVideo() {
 				pc.createOffer()
 				.then(offer => pc.setLocalDescription(offer))
 				.then(() => sendMessage({'sdp': pc.localDescription }))
 			}
 
 		</script>
+		<style type="text/css">
+			body {
+				margin: 0;
+				background: #111;
+			}
+			video {
+			    position: fixed;
+			}
+			#local {
+			    max-height: 33%;
+			    bottom: 10%;
+			    right: 0;
+			    border-radius: 5px;
+			}
+
+			#remote {
+				width: 100%;
+				max-height: 90%;
+				top: 0;
+			}
+			button {
+				position: fixed;
+				display: inline-block;
+				height: 10%;
+				width: 100%;
+				bottom: 0;
+				border: 0;
+				outline: 0;
+				font-family: "Roboto", sans-serif;
+				font-size: xx-large;
+				cursor: pointer;
+				user-select: none;
+				background: #388e3c;
+				color: #fff;
+			}
+		</style>
 	</body>
 </html>
 
