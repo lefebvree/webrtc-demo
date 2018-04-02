@@ -22,9 +22,8 @@ app.listen(3000)
 
 // Relais les messages aux autres clients
 io.sockets.on('connection', socket => {
-
-    socket.on('offer', data => socket.broadcast.emit('offer', data))
-    socket.on('answer', data => socket.broadcast.emit('answer', data))
+	socket.on('offer', data => socket.broadcast.emit('offer', data))
+	socket.on('answer', data => socket.broadcast.emit('answer', data))
 
 	socket.on('ice', data => socket.broadcast.emit('ice', data))
 
