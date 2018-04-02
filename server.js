@@ -6,7 +6,7 @@ const sio = require('socket.io')
 // Options server https
 const options = {
 	key: fs.readFileSync('../certs/privkey.pem'),
-	cert: fs.readFileSync('..//certs/fullchain.pem')
+	cert: fs.readFileSync('../certs/fullchain.pem')
 }
 
 // Fichier statique html à servir
@@ -20,9 +20,10 @@ let app = https.createServer(options, function(req, res) {
 const io = sio.listen(app)
 app.listen(3000)
 
+// Emets les offer à tous les autres clients
 io.sockets.on('connection', function (socket) {
-	console.log('ok')
-});
-
-
+	socket.on('msg', function (data) {
+		socket.broadcast.emit('msg', data)
+	})
+})
 
