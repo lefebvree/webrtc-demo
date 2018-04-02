@@ -4,6 +4,7 @@
 		<script src="/socket.io/socket.io.js"></script>
 	</head>
 	<body onload="startLocalVideo()">
+
 		<video id="remote" autoplay></video>
 		<video id="local" autoplay muted></video>
 
@@ -12,48 +13,67 @@
 		<script>
 			// Script based on websitebeaver.com
 			// https://websitebeaver.com/insanely-simple-webrtc-video-chat-using-firebase-with-codepen-demo
+			const socket = io('//')
 
 			const localVideo = document.getElementById('local')
 			const remoteVideo = document.getElementById('remote')
 
+			// Création de PeerConnection
 			const servers = {'iceServers': [{'urls': 'stun:stun.services.mozilla.com'}, {'urls': 'stun:stun.l.google.com:19302'}]}
+			let peerConnection = new RTCPeerConnection(servers)
 
-			const socket = io('//')
-			socket.on('msg', data => readMessage(data))
-
-			let pc = new RTCPeerConnection(servers)
-
-			pc.onicecandidate = (event => event.candidate ? sendMessage({'ice': event.candidate}) : console.log("Sent All Ice"))
-			pc.onaddstream = (event => remoteVideo.srcObject = event.stream)
-
-			function sendMessage(data) {
-				socket.emit('msg', data)
-			}
-
-			function readMessage(data) {
-				if (data.ice != undefined) {
-					pc.addIceCandidate(new RTCIceCandidate(data.ice))
-				} else if (data.sdp.type == "offer") {
-					pc.setRemoteDescription(new RTCSessionDescription(data.sdp))
-					.then(() => pc.createAnswer())
-					.then(answer => pc.setLocalDescription(answer))
-					.then(() => sendMessage({'sdp': pc.localDescription}))
-				} else if (data.sdp.type == "answer") {
-					pc.setRemoteDescription(new RTCSessionDescription(data.sdp))
-				}
-			}
 
 			function startLocalVideo() {
+				// Récupération du média à transmettre
 				navigator.mediaDevices.getUserMedia({audio: false, video: true})
+				// Affichage du localStream dans <video>
 				.then(stream => localVideo.srcObject = stream)
-				.then(stream => pc.addStream(stream))
+
+				// Ajout du média
+				.then(stream => peerConnection.addStream(stream))
 			}
 
+
+			// Une des clients lance l'échange
 			function startRemoteVideo() {
-				pc.createOffer()
-				.then(offer => pc.setLocalDescription(offer))
-				.then(() => sendMessage({'sdp': pc.localDescription }))
+
+				// Création de l'offre SDP
+				peerConnection.createOffer()
+				.then(offer => peerConnection.setLocalDescription(offer))
+
+				// Envoi de l'offre SDP
+				.then(() => socket.emit('offer', peerConnection.localDescription ))
+
 			}
+
+
+			// Reception de l'offre SDP
+			socket.on('offer', sdp => {
+				peerConnection.setRemoteDescription(new RTCSessionDescription(sdp))
+
+				// Création de la réponse
+				.then(() => peerConnection.createAnswer())
+				.then(answer => peerConnection.setLocalDescription(answer))
+
+				// Envoi de la réponse
+				.then(() => socket.emit('answer', peerConnection.localDescription))
+			}
+
+
+			// Reception de la réponse SDP
+			socket.on('answer', sdp => {
+				peerConnection.setRemoteDescription(new RTCSessionDescription(sdp))
+			}
+
+			// Affichage du remoteStream dans <video>
+			peerConnection.onaddstream = (event => remoteVideo.srcObject = event.stream)
+
+
+
+			// Echange des serveurs ICE entre les clients
+			socket.on('ice', ice => peerConnection.addIceCandidate(new RTCIceCandidate(ice))
+			peerConnection.onicecandidate = (event => event.candidate ? socket.emit('ice', event.candidate))
+
 
 		</script>
 		<style type="text/css">
@@ -62,13 +82,13 @@
 				background: #111;
 			}
 			video {
-			    position: fixed;
+				position: fixed;
 			}
 			#local {
-			    max-height: 33%;
-			    bottom: 10%;
-			    right: 0;
-			    border-radius: 5px;
+				max-height: 33%;
+				bottom: 10%;
+				right: 0;
+				border-radius: 5px;
 			}
 
 			#remote {

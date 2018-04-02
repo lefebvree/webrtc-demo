@@ -11,7 +11,7 @@ const options = {
 
 // Fichier statique html à servir
 const staticHTML = fs.readFileSync('index.html')
-let app = https.createServer(options, function(req, res) {
+let app = https.createServer(options, (req, res) => {
 	res.writeHead(200)
 	res.end(staticHTML)
 })
@@ -21,9 +21,11 @@ const io = sio.listen(app)
 app.listen(3000)
 
 // Relais les messages aux autres clients
-io.sockets.on('connection', function (socket) {
-	socket.on('msg', function (data) {
-		socket.broadcast.emit('msg', data)
-	})
-})
+io.sockets.on('connection', socket => {
 
+    socket.on('offer', data => socket.broadcast.emit('offer', data)
+    socket.on('answer', data => socket.broadcast.emit('answer', data)
+
+	socket.on('ice', data => socket.broadcast.emit('ice', data)
+
+})
