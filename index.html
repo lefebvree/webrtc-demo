@@ -42,37 +42,47 @@
 				.then(offer => peerConnection.setLocalDescription(offer))
 
 				// Envoi de l'offre SDP
-				.then(() => socket.emit('offer', peerConnection.localDescription ))
+				.then(_ => socket.emit('offer', peerConnection.localDescription))
 
 			}
 
 
 			// Reception de l'offre SDP
 			socket.on('offer', sdp => {
-				peerConnection.setRemoteDescription(new RTCSessionDescription(sdp))
+				if (sdp.type == 'offer') {
 
-				// Création de la réponse
-				.then(() => peerConnection.createAnswer())
-				.then(answer => peerConnection.setLocalDescription(answer))
+					peerConnection.setRemoteDescription(new RTCSessionDescription(sdp))
 
-				// Envoi de la réponse
-				.then(() => socket.emit('answer', peerConnection.localDescription))
-			}
+					// Création de la réponse
+					.then(_ => peerConnection.createAnswer())
+					.then(answer => peerConnection.setLocalDescription(answer))
+
+					// Envoi de la réponse
+					.then(_ => socket.emit('answer', peerConnection.localDescription))
+
+				}
+			})
 
 
 			// Reception de la réponse SDP
 			socket.on('answer', sdp => {
-				peerConnection.setRemoteDescription(new RTCSessionDescription(sdp))
-			}
+				if (sdp.type == 'answer') {
+					peerConnection.setRemoteDescription(new RTCSessionDescription(sdp))
+				}
+			})
+
 
 			// Affichage du remoteStream dans <video>
 			peerConnection.onaddstream = (event => remoteVideo.srcObject = event.stream)
 
 
-
 			// Echange des serveurs ICE entre les clients
-			socket.on('ice', ice => peerConnection.addIceCandidate(new RTCIceCandidate(ice))
-			peerConnection.onicecandidate = (event => event.candidate ? socket.emit('ice', event.candidate))
+			peerConnection.onicecandidate = (event => {
+				if (event.candidate) socket.emit('ice', event.candidate)
+			})
+			socket.on('ice', ice => {
+				peerConnection.addIceCandidate(new RTCIceCandidate(ice))
+			})
 
 
 		</script>
